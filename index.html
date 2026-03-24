@@ -1,0 +1,386 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>THE OLYMPIAN</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config={theme:{extend:{colors:{midnight:'#2E1B3C',cerulean:'#007B97',sandy:'#EE964B',mutedteal:'#3ACDAD',beige:'#F5F5DC',silver:'#BDC3C7'}}}}
+</script>
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#F5F5DC;font-family:Inter,ui-sans-serif,system-ui;-webkit-font-smoothing:antialiased}
+.glass{backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.mon-t{transition:transform 0.6s ease,opacity 0.6s ease}
+.fade-in{opacity:0;transform:translateY(28px);transition:opacity 0.8s ease,transform 0.8s ease}
+.fade-in.on{opacity:1;transform:translateY(0)}
+.slash{transform-origin:left center;transition:transform 0.8s ease}
+.slash.off{transform:scaleX(0)}
+.slash.on{transform:scaleX(1)}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState,useEffect,useRef}=React;
+
+const AwardIcon=()=><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="6" stroke="#EE964B" strokeWidth="1.8"/><path d="M8.5 14.5L7 22l5-3 5 3-1.5-7.5" stroke="#EE964B" strokeWidth="1.8" strokeLinejoin="round"/></svg>;
+const FlameIcon=()=><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2s4 4 4 8c0 2.5-1.5 4.5-3 5.5.5-2-1-4-3-4-1 0-2 .8-2 2 0-3-2-5-2-7.5C6 3.5 9 2 12 2z" fill="#007B97"/><path d="M12 22c-2.2 0-4-1.8-4-4 0-1.5 1-2.5 2-3 0 1 .8 2 2 2s2-1 2-2c1 .5 2 1.5 2 3 0 2.2-1.8 4-4 4z" fill="#3ACDAD"/></svg>;
+const CheckIcon=()=><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="#3ACDAD" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>;
+const ZapIcon=()=><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M13 2L3 14h7l-1 8 10-12h-7l1-8z" fill="#EE964B"/></svg>;
+const XIcon=()=><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M18 6L6 18M6 6l12 12" stroke="#2E1B3C" strokeWidth="2.5" strokeLinecap="round"/></svg>;
+const InfoIcon=()=><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="#007B97" strokeWidth="1.5"/><path d="M12 8v1M12 11v5" stroke="#007B97" strokeWidth="2" strokeLinecap="round"/></svg>;
+
+function useInView(ref,threshold=0.2){
+  const[v,setV]=useState(false);
+  useEffect(()=>{
+    if(!ref.current)return;
+    const o=new IntersectionObserver(([e])=>{if(e.isIntersecting)setV(true)},{threshold});
+    o.observe(ref.current);
+    return()=>o.disconnect();
+  },[]);
+  return v;
+}
+
+function Monitor({w=200,h=130,screen="#1e293b",label=""}){
+  return(
+    <svg width={w} height={h} viewBox="0 0 200 130" fill="none">
+      <rect x="4" y="4" width="192" height="112" rx="8" fill="#1e293b"/>
+      <rect x="14" y="12" width="172" height="84" rx="4" fill={screen}/>
+      {label&&<text x="100" y="58" textAnchor="middle" fill="#94a3b8" fontSize="11" fontFamily="ui-sans-serif">{label}</text>}
+      <rect x="80" y="118" width="40" height="6" rx="3" fill="#334155"/>
+      <rect x="70" y="124" width="60" height="4" rx="2" fill="#475569"/>
+    </svg>
+  );
+}
+
+function Modal({open,onClose,data}){
+  if(!open)return null;
+  return(
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{background:'rgba(46,27,60,0.65)',backdropFilter:'blur(8px)'}}>
+      <div className="relative bg-beige rounded-2xl shadow-2xl max-w-lg w-full p-8 border border-silver">
+        <button onClick={onClose} className="absolute top-4 right-4 p-1.5 bg-midnight rounded-lg"><XIcon/></button>
+        <div className="flex items-center gap-3 mb-5"><AwardIcon/><h3 className="text-midnight font-black text-xl">{data.title}</h3></div>
+        <div className="space-y-4">
+          <div>
+            <div className="text-xs font-bold text-cerulean uppercase tracking-wider mb-1">What It Means</div>
+            <p className="text-slate-700 text-sm leading-relaxed">{data.education}</p>
+          </div>
+          <blockquote className="border-l-4 border-sandy pl-4 italic text-slate-600 text-sm">"{data.quote}"</blockquote>
+          <div>
+            <div className="text-xs font-bold text-cerulean uppercase tracking-wider mb-1">Pro Impact</div>
+            <p className="text-slate-700 text-sm leading-relaxed">{data.proImpact}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SpecCard({spec,onOpen}){
+  return(
+    <button onClick={()=>onOpen(spec)} className="w-full text-left p-6 bg-white rounded-2xl border border-silver shadow hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group">
+      <div className="flex items-start gap-4">
+        <div className="p-3 bg-midnight/5 rounded-xl group-hover:bg-cerulean/10 transition-colors"><InfoIcon/></div>
+        <div className="flex-1">
+          <div className="inline-block px-2 py-0.5 bg-sandy/20 text-sandy text-xs font-mono rounded mb-2">{spec.badge}</div>
+          <h4 className="text-midnight font-black text-lg">{spec.title}</h4>
+          <p className="text-slate-500 text-sm mt-1">{spec.tagline}</p>
+        </div>
+      </div>
+      <div className="mt-4 text-xs text-cerulean font-semibold opacity-0 group-hover:opacity-100 transition-opacity">Click to explore →</div>
+    </button>
+  );
+}
+
+function ValueCard({item,slashed,delay}){
+  return(
+    <div className="bg-white rounded-2xl border border-silver p-5 shadow">
+      <div className="flex justify-between items-start mb-3">
+        <div>
+          <div className="font-black text-midnight">{item.name}</div>
+          <div className="text-xs text-slate-400">{item.type}</div>
+        </div>
+        <div className="text-right">
+          <div className="relative inline-block">
+            <div className="font-black text-midnight text-lg">{item.msrp}</div>
+            <svg className={`absolute inset-0 w-full h-full pointer-events-none slash ${slashed?'on':'off'}`}
+              style={{transitionDelay:delay}}
+              viewBox="0 0 100 30" preserveAspectRatio="none">
+              <line x1="0" y1="28" x2="100" y2="2" stroke="#EE964B" strokeWidth="5" strokeLinecap="round"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+      <div className="text-xs text-mutedteal font-semibold mb-3">{item.ourPrice}</div>
+      <div className="pt-3 border-t border-silver/50 space-y-1">
+        {item.specs.map((s,i)=><div key={i} className="text-xs text-slate-500">{s}</div>)}
+      </div>
+    </div>
+  );
+}
+
+function App(){
+  const specs=[
+    {id:'ppi',title:'186 PPI',badge:'DISPLAY PRECISION',tagline:'Pin-sharp clarity at every pixel',
+     education:'186 pixels per inch delivers exceptional sharpness on a 24" panel. Text is crisp, icons are razor-defined, and fine photo detail is fully resolved without upscaling.',
+     quote:'At 186 PPI the screen disappears — you only see the work.',
+     proImpact:'Designers gain pixel-perfect fidelity. Analysts read dense data without zoom fatigue. Writers see book-quality text rendering all day long.'},
+    {id:'sync',title:'Native Sync',badge:'ZERO LATENCY',tagline:'Hardware-level display handshake',
+     education:'Native Sync means the display talks directly to your GPU at the hardware level — no drivers, no adapters, no negotiation lag. Plug in and it works instantly.',
+     quote:'The monitor knows your system. Your system knows the monitor.',
+     proImpact:'Eliminates display stutter, color profile mismatches, and refresh drift. Critical for video editors, 3D artists, and color-critical work.'},
+    {id:'tb',title:'TB Chain',badge:'ONE CABLE',tagline:'One cable powers a three-screen empire',
+     education:'Thunderbolt Daisy Chain lets you connect a second (and third) monitor directly to the first — no extra hub needed. One cable from laptop, full triple output.',
+     quote:'Clean desk. Clear mind. One cable.',
+     proImpact:'Saves 2+ ports on your machine. Eliminates dock clutter. Build a full triple-monitor workstation and still have ports left for drives and peripherals.'}
+  ];
+
+  const values=[
+    {name:'32" LG UltraFine',type:'Primary Display',msrp:'$699',ourPrice:'✦ Included in bundle',specs:['186 PPI • Retina-class','400 nits brightness','Thunderbolt 3 chain']},
+    {name:'24" Dell UltraSharp',type:'Side Display ×2',msrp:'$329',ourPrice:'✦ Included in bundle',specs:['110 PPI • IPS panel','300 nits brightness','Native Sync ready']},
+    {name:'TB3 Dock + Cables',type:'I/O & Cabling',msrp:'$249',ourPrice:'✦ Included in bundle',specs:['Daisy-chain capable','85W host charging','USB-A + USB-C ports']},
+    {name:'Full System Bundle',type:'Your Total Price',msrp:'$1,630+',ourPrice:'★ Only $1,150',specs:['PPI optimized stack','400 nits peak output','Full TB integration']}
+  ];
+
+  const[modalOpen,setModalOpen]=useState(false);
+  const[activeSpec,setActiveSpec]=useState(specs[0]);
+  const openModal=(s)=>{setActiveSpec(s);setModalOpen(true);};
+
+  const[stage,setStage]=useState(0);
+  const s1=useRef(null),s2=useRef(null),s3=useRef(null);
+
+  useEffect(()=>{
+    const mk=(el,n)=>{
+      if(!el)return;
+      const o=new IntersectionObserver(([e])=>{if(e.isIntersecting)setStage(n)},{threshold:0.5});
+      o.observe(el);return o;
+    };
+    const o1=mk(s1.current,0),o2=mk(s2.current,1),o3=mk(s3.current,2);
+    return()=>{o1&&o1.disconnect();o2&&o2.disconnect();o3&&o3.disconnect();};
+  },[]);
+
+  const valRef=useRef(null);
+  const valVis=useInView(valRef,0.2);
+  const heroRef=useRef(null);
+  const heroVis=useInView(heroRef,0.1);
+  const specRef=useRef(null);
+  const specVis=useInView(specRef,0.1);
+  const finalRef=useRef(null);
+  const finalVis=useInView(finalRef,0.1);
+
+  const stageLabels=['Daisy Chain','Triple Threat','Social Pivot'];
+  const stageDesc=[
+    'One TB cable from your laptop powers the 32" centerpiece. Zero clutter.',
+    'Two 24" panels flank the 32" center. Side monitors fade back to spotlight the main.',
+    'Right monitor rotates vertical — perfect for social feeds and long-form content.'
+  ];
+
+  const leftStyle={
+    opacity:stage===0?0:stage>=1?0.3:1,
+    transform:stage===0?'scale(0) translateX(-30px)':`scale(${stage>=1?0.85:1}) translateX(0)`
+  };
+  const centerStyle={opacity:1,transform:`scale(${stage>=1?1.12:1})`};
+  const rightStyle={
+    opacity:stage===0?0:stage>=1?0.3:1,
+    transform:stage===0?'scale(0) translateX(30px)':`scale(${stage>=1?0.85:1}) rotate(${stage>=2?90:0}deg)`
+  };
+
+  return(
+    <div className="w-full overflow-x-hidden">
+
+      {/* HERO */}
+      <section className="relative bg-midnight overflow-hidden min-h-screen flex items-center">
+        <div className="absolute top-0 right-0 w-[600px] h-[600px] rounded-full opacity-[0.07]" style={{background:'radial-gradient(circle,#007B97,transparent)',transform:'translate(20%,-20%)'}}/>
+        <div className="absolute bottom-0 left-0 w-80 h-80 rounded-full opacity-[0.07]" style={{background:'radial-gradient(circle,#EE964B,transparent)',transform:'translate(-20%,20%)'}}/>
+
+        <div ref={heroRef} className={`max-w-6xl mx-auto px-6 py-24 w-full grid md:grid-cols-2 gap-16 items-center fade-in ${heroVis?'on':''}`}>
+          <div className="space-y-8">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-sandy/30 text-sandy text-xs font-semibold tracking-widest uppercase">
+              <AwardIcon/> Studio Exclusive
+            </div>
+            <div>
+              <h1 className="text-beige font-black leading-none" style={{fontSize:'clamp(2.4rem,6vw,4.5rem)'}}>
+                THE<br/><span className="text-sandy">OLYMPIAN</span>
+              </h1>
+              <div className="text-silver font-light tracking-[0.3em] mt-2" style={{fontSize:'clamp(0.8rem,1.5vw,1rem)'}}>CREATIVE SUITE</div>
+            </div>
+            <p className="text-beige/70 text-base md:text-lg leading-relaxed max-w-md">
+              A precision-curated hardware stack for creators who demand professional-grade performance — without the professional-grade price tag.
+            </p>
+            <div className="flex flex-wrap gap-4 items-center">
+              <a href="#final" className="inline-flex items-center gap-2 bg-sandy text-midnight px-7 py-4 rounded-xl font-black text-sm shadow-xl hover:bg-sandy/90 hover:scale-105 transition-all">
+                Adopt the Legacy <ZapIcon/>
+              </a>
+              <div className="text-beige/50 text-sm">Limited stock • Ships fast</div>
+            </div>
+            <div className="flex gap-8 pt-2">
+              {[['75%','Below MSRP'],['2 yr','Warranty'],['3x','Displays']].map(([v,l])=>(
+                <div key={l} className="text-center">
+                  <div className="text-sandy font-black" style={{fontSize:'clamp(1.4rem,3vw,2rem)'}}>{v}</div>
+                  <div className="text-beige/40 text-xs mt-1 uppercase tracking-wide">{l}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="relative flex justify-center">
+            <div className="relative w-full max-w-md">
+              <img src="https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=900&q=80"
+                alt="Workstation" className="rounded-2xl shadow-2xl w-full object-cover" style={{maxHeight:'420px'}}/>
+              <div className="absolute -top-5 -right-5 w-24 h-24 bg-sandy rounded-full flex flex-col items-center justify-center shadow-2xl border-4 border-midnight">
+                <div className="text-midnight font-black text-2xl leading-none">75%</div>
+                <div className="text-midnight text-xs font-black">OFF</div>
+              </div>
+              <div className="absolute -bottom-8 -left-6 bg-beige/95 border border-silver rounded-2xl p-5 shadow-2xl w-56">
+                <div className="text-xs text-slate-400 mb-1 uppercase tracking-wide">Full Bundle</div>
+                <div className="flex justify-between items-end">
+                  <div>
+                    <div className="font-black text-midnight text-2xl leading-none">$1,150</div>
+                    <div className="text-xs text-slate-400 line-through mt-1">$1,630+ MSRP</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-xs text-mutedteal font-bold">Core i7</div>
+                    <div className="text-xs text-slate-400">32GB NVMe</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* SPEC DECODER */}
+      <section ref={specRef} className="bg-beige py-24">
+        <div className={`max-w-6xl mx-auto px-6 fade-in ${specVis?'on':''}`}>
+          <div className="mb-14">
+            <div className="text-cerulean text-xs font-black tracking-widest uppercase mb-2">Deep Dive</div>
+            <h2 className="text-midnight font-black" style={{fontSize:'clamp(1.8rem,4vw,3rem)'}}>Spec-Decoder</h2>
+            <p className="text-slate-500 mt-3 max-w-xl text-base">Every spec has a story. Tap a card to understand what it means for your daily workflow.</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {specs.map(s=><SpecCard key={s.id} spec={s} onOpen={openModal}/>)}
+          </div>
+        </div>
+      </section>
+
+      <Modal open={modalOpen} onClose={()=>setModalOpen(false)} data={activeSpec}/>
+
+      {/* RECONFIGURATOR */}
+      <section className="bg-white py-24">
+        <div className="max-w-6xl mx-auto px-6">
+          <div className="mb-14">
+            <div className="text-cerulean text-xs font-black tracking-widest uppercase mb-2">Interactive</div>
+            <h2 className="text-midnight font-black" style={{fontSize:'clamp(1.8rem,4vw,3rem)'}}>The Reconfigurator</h2>
+            <p className="text-slate-500 mt-3 max-w-xl">Scroll through the stages below. Watch the setup evolve in real time.</p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-12 items-start">
+            <div className="sticky top-8">
+              <div className="bg-beige rounded-2xl border border-silver p-8 shadow-xl">
+                <div className="flex items-center justify-between mb-6">
+                  <div>
+                    <div className="text-xs text-slate-400 uppercase tracking-wider font-semibold">Current Stage</div>
+                    <div className="text-midnight font-black text-2xl mt-1">{stageLabels[stage]}</div>
+                  </div>
+                  <div className="flex gap-2">
+                    {[0,1,2].map(i=>(
+                      <div key={i} className="w-3 h-3 rounded-full transition-all duration-300" style={{background:i===stage?'#EE964B':'#BDC3C7',transform:i===stage?'scale(1.3)':'scale(1)'}}/>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex items-end justify-center gap-4 py-6 min-h-40 overflow-hidden">
+                  <div className="mon-t" style={leftStyle}><Monitor w={110} h={72} screen="#1e3a5f" label='24"'/></div>
+                  <div className="mon-t" style={centerStyle}><Monitor w={170} h={110} screen="#0f2744" label='32"'/></div>
+                  <div className="mon-t" style={rightStyle}><Monitor w={110} h={72} screen="#1e3a5f" label='24"'/></div>
+                </div>
+
+                <div className="flex justify-center my-3">
+                  <svg width="260" height="10" viewBox="0 0 260 10">
+                    <line x1="10" y1="5" x2="250" y2="5" stroke="#BDC3C7" strokeWidth="2" strokeDasharray="6 4"/>
+                    <circle cx="10" cy="5" r="4" fill="#3ACDAD"/>
+                    <circle cx="130" cy="5" r="3" fill="#EE964B"/>
+                    <circle cx="250" cy="5" r="4" fill="#3ACDAD"/>
+                  </svg>
+                </div>
+                <p className="text-center text-sm text-slate-500 mt-2 leading-relaxed">{stageDesc[stage]}</p>
+              </div>
+            </div>
+
+            <div>
+              <div ref={s1} className="py-16 border-b border-silver/40">
+                <div className="inline-block px-3 py-1 bg-midnight text-beige text-xs font-mono rounded-full mb-4">Stage 01</div>
+                <h3 className="text-midnight font-black text-2xl mb-3">Daisy Chain</h3>
+                <p className="text-slate-500 leading-relaxed">One Thunderbolt cable from your MacBook or PC powers the 32" center monitor. No hub. No splitter. No mess. Just plug in and create.</p>
+                <div className="mt-4 flex items-center gap-2 text-sm text-mutedteal font-semibold"><CheckIcon/>Single cable. Zero clutter.</div>
+              </div>
+              <div ref={s2} className="py-16 border-b border-silver/40">
+                <div className="inline-block px-3 py-1 bg-cerulean text-beige text-xs font-mono rounded-full mb-4">Stage 02</div>
+                <h3 className="text-midnight font-black text-2xl mb-3">Triple Threat</h3>
+                <p className="text-slate-500 leading-relaxed">Chain in both 24" panels. The 32" commands center stage. Side monitors handle reference material, chat, or extended timelines. A true power setup.</p>
+                <div className="mt-4 flex items-center gap-2 text-sm text-mutedteal font-semibold"><CheckIcon/>Three screens. One cable run.</div>
+              </div>
+              <div ref={s3} className="py-16">
+                <div className="inline-block px-3 py-1 bg-sandy text-midnight text-xs font-mono rounded-full mb-4">Stage 03</div>
+                <h3 className="text-midnight font-black text-2xl mb-3">Social Pivot</h3>
+                <p className="text-slate-500 leading-relaxed">Rotate the right 24" to portrait orientation. Now you have a vertical display built for Instagram, TikTok previews, and long-form document review.</p>
+                <div className="mt-4 flex items-center gap-2 text-sm text-mutedteal font-semibold"><CheckIcon/>Portrait mode for social creators.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* VALUE GAP */}
+      <section ref={valRef} className="bg-beige py-24">
+        <div className="max-w-6xl mx-auto px-6">
+          <div className="mb-14">
+            <div className="text-cerulean text-xs font-black tracking-widest uppercase mb-2">The Math</div>
+            <h2 className="text-midnight font-black" style={{fontSize:'clamp(1.8rem,4vw,3rem)'}}>Value Gap</h2>
+            <p className="text-slate-500 mt-3 max-w-xl">Watch the market prices get crossed out as the real savings become clear.</p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            {values.map((item,i)=>(
+              <ValueCard key={item.name} item={item} slashed={valVis} delay={`${i*150}ms`}/>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* FINAL HOOK */}
+      <section id="final" ref={finalRef} className="bg-midnight py-24 relative overflow-hidden">
+        <div className="absolute inset-0" style={{background:'radial-gradient(ellipse at 70% 50%, rgba(0,123,151,0.15), transparent 60%)'}}/>
+        <div className={`max-w-6xl mx-auto px-6 grid md:grid-cols-2 gap-16 items-center relative fade-in ${finalVis?'on':''}`}>
+          <div className="space-y-8">
+            <div>
+              <div className="text-sandy text-xs font-black tracking-widest uppercase mb-3">Limited Availability</div>
+              <h2 className="text-beige font-black leading-tight" style={{fontSize:'clamp(2rem,5vw,3.5rem)'}}>
+                Adopt the<br/><span className="text-sandy">Legacy.</span>
+              </h2>
+            </div>
+            <p className="text-beige/70 text-lg leading-relaxed max-w-md">
+              A meticulously curated professional hardware package. Certified. Tested. Ready to ship. No compromises on performance — only on price.
+            </p>
+            <div className="flex items-end gap-6">
+              <div>
+                <div className="text-beige/40 text-sm line-through mb-1">$1,630+ market rate</div>
+                <div className="text-sandy font-black leading-none" style={{fontSize:'clamp(3rem,8vw,5rem)'}}>$1,150</div>
+              </div>
+            </div>
+            <div className="space-y-3">
+              {['2-year warranty included','Certified components — fully tested','Thunderbolt daisy-chain ready','Fast tracked shipping'].map(item=>(
+                <div key={item} className="flex items-center gap-3 text-beige/80 text-sm">
+                  <CheckIcon/>{item}
+                </div>
+              ))}
+            </div>
+            <div className="flex flex-wrap gap-4 pt-2">
+              <a href="mailto:hello@thedigitalbutler.com" className="inline-flex items-center gap-2 bg-sandy text-midnight px-8 py-4 rounded-xl font-black shadow-xl hover:scale-105 transition-transform">
+                Buy Now <ZapIcon/>
+              </a>
+              <a href="mailto:hello@thedigitalbutler.com" className="inline-flex items-center gap-2 border border-beige/30 text-beige px-8 py-4 rounded-xl font-semibold hover:border-beige/60 transition
